@@ -9,6 +9,37 @@ const redis = new Redis(env.REDIS_URL);
 
 const app = await buildService('gateway');
 
+function extractIp(req: any) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip as string;
+}
+
+function normalizeIp(ip: string) {
+  return ip.replace('::ffff:', '');
+}
+
+function isAllowedWebhookIp(ip: string) {
+  const normalized = normalizeIp(ip);
+  if (normalized.startsWith('196.201.214.')) {
+    return true;
+  }
+  if (env.NODE_ENV === 'development' && (normalized === '127.0.0.1' || normalized === '::1')) {
+    return true;
+  }
+  return false;
+}
+
+async function enforceRateLimit(key: string, limit: number, windowSec: number) {
+  const count = await redis.incr(key);
+  if (count === 1) {
+    await redis.expire(key, windowSec);
+  }
+  return count <= limit;
+}
+
 function normalizePhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('254')) {
@@ -23,6 +54,11 @@ function normalizePhone(phone: string) {
 app.post('/auth/otp/request', async (req, reply) => {
   const body = req.body as { phone: string };
   const phone = normalizePhone(body.phone);
+  const otpRateKey = `ratelimit:otp:${phone}`;
+  const allowed = await enforceRateLimit(otpRateKey, 5, 60 * 60);
+  if (!allowed) {
+    return reply.code(429).send({ message: 'OTP request limit exceeded. Try again later.' });
+  }
   const key = `otp:${phone}`;
   const existing = await redis.get(key);
   if (existing) {
@@ -39,7 +75,7 @@ app.post('/auth/otp/request', async (req, reply) => {
     }
   });
 
-  return reply.send({ ok: true, phone, code });
+  return reply.send({ ok: true, phone, message: 'OTP generated and queued for delivery' });
 });
 
 app.post('/auth/otp/verify', async (req, reply) => {
@@ -92,6 +128,10 @@ app.addHook('preHandler', async (req, reply) => {
     return;
   }
   if (req.url.startsWith('/webhook/mpesa/')) {
+    const ip = extractIp(req);
+    if (!isAllowedWebhookIp(ip)) {
+      return reply.code(403).send({ message: 'Forbidden webhook source' });
+    }
     return;
   }
   if (!req.url.startsWith('/api/')) {
@@ -106,6 +146,12 @@ app.addHook('preHandler', async (req, reply) => {
   const blocked = await redis.get(`jwt_blacklist:${payload.jti}`);
   if (blocked) {
     return reply.code(401).send({ message: 'Token blacklisted' });
+  }
+
+  const limit = payload.role === 'admin' ? 1000 : 300;
+  const ok = await enforceRateLimit(`ratelimit:api:${payload.jti}`, limit, 60 * 60);
+  if (!ok) {
+    return reply.code(429).send({ message: 'API rate limit exceeded. Try again later.' });
   }
 });
 

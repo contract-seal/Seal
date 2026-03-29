@@ -88,7 +88,7 @@ bus.consume('notification-service', {
     const b = await queueMessage('sms', job.client.phone, 'job.completed', { jobId: job.id, amount: job.totalAmount });
     await markDelivered(b.id);
   },
-  [events.PAYMENT_STK_FAILED]: async (payload) => {
+  [events.PAYMENT_STK_FAILED_FINAL]: async (payload) => {
     const job = await prisma.job.findUnique({ where: { id: String(payload.jobId) }, include: { client: true } });
     if (!job) return;
     const a = await queueMessage('sms', job.client.phone, 'payment.stk.failed', {

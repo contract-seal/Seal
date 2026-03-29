@@ -1,6 +1,6 @@
 import { prisma } from '@seal/db';
-import { env } from '@seal/config';
-import { buildService } from '@seal/shared';
+import { env, serviceUrls } from '@seal/config';
+import { buildService, requestJson } from '@seal/shared';
 import { EventBus } from '@seal/events';
 import { events } from '@seal/contracts';
 
@@ -71,7 +71,15 @@ app.post('/webhook/mpesa/confirmation', async (req, reply) => {
 app.post('/webhook/mpesa/stk-callback', async (req) => {
   const body = req.body as { jobId: string; phone: string; amount: number; success: boolean };
   if (!body.success) {
-    await bus.publish(events.PAYMENT_STK_FAILED, { jobId: body.jobId, phone: body.phone, amount: body.amount });
+    const job = await prisma.job.findUnique({ where: { id: body.jobId } });
+    const purpose = job?.state === 'RELEASING' ? 'balance' : 'deposit';
+    await bus.publish(events.PAYMENT_STK_FAILED, {
+      jobId: body.jobId,
+      phone: body.phone,
+      amount: body.amount,
+      purpose,
+      retries: 0
+    });
     return { ResultCode: 0, ResultDesc: 'Handled failed STK' };
   }
 
@@ -267,6 +275,44 @@ bus.consume('payment-service', {
     }
     if (clientAmount > 0) {
       await app.inject({ method: 'POST', url: '/api/payments/b2c', payload: { jobId, phone: job.client.phone, amount: clientAmount } });
+    }
+  },
+  [events.PAYMENT_STK_FAILED]: async (payload) => {
+    const retries = Number(payload.retries ?? 0);
+    if (retries >= 1) {
+      await bus.publish(events.PAYMENT_STK_FAILED_FINAL, payload);
+      return;
+    }
+
+    await requestJson<{ jobId: string }>(`${serviceUrls.scheduler}/api/scheduler/timers`, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'stk.retry',
+        delayMs: 10 * 60 * 1000,
+        payload: {
+          jobId: String(payload.jobId),
+          phone: String(payload.phone),
+          amount: Number(payload.amount),
+          purpose: String(payload.purpose ?? 'deposit'),
+          retries: retries + 1
+        }
+      })
+    });
+  },
+  [events.TIMER_STK_RETRY_FIRED]: async (payload) => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/payments/stk-push',
+      payload: {
+        jobId: String(payload.jobId),
+        phone: String(payload.phone),
+        amount: Number(payload.amount),
+        purpose: String(payload.purpose ?? 'deposit')
+      }
+    });
+
+    if (response.statusCode >= 400) {
+      await bus.publish(events.PAYMENT_STK_FAILED_FINAL, payload);
     }
   }
 }).catch((error) => app.log.error(error));

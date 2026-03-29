@@ -55,13 +55,16 @@ export const events = {
   PAYMENT_BALANCE_CONFIRMED: 'payment.balance.confirmed',
   PAYMENT_B2C_CONFIRMED: 'payment.b2c.confirmed',
   PAYMENT_STK_FAILED: 'payment.stk.failed',
+  PAYMENT_STK_FAILED_FINAL: 'payment.stk.failed.final',
   DISPUTE_RESOLVED: 'dispute.resolved',
   USER_ARTISAN_APPROVED: 'user.artisan.approved',
   USER_ARTISAN_REJECTED: 'user.artisan.rejected',
   REPUTATION_UPDATED: 'reputation.score.updated',
   TIMER_DEPOSIT_EXPIRED: 'timer.deposit_expired',
   TIMER_APPROVAL_EXPIRED: 'timer.approval_expired',
-  TIMER_DISPUTE_SLA_EXPIRED: 'timer.dispute_sla_expired'
+  TIMER_DISPUTE_SLA_EXPIRED: 'timer.dispute_sla_expired',
+  TIMER_STK_RETRY_FIRED: 'timer.stk_retry_fired',
+  TIMER_IPRS_RETRY_FIRED: 'timer.iprs_retry_fired'
 } as const;
 
 export type EventName = (typeof events)[keyof typeof events];

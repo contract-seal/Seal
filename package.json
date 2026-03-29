@@ -22,6 +22,8 @@
     "start:all": "concurrently -n gateway,user,job,payment,escrow,dispute,reputation,scheduler,notification,ussd -c blue,green,yellow,magenta,cyan,red,white,gray,orange,purple \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:job\" \"npm:dev:payment\" \"npm:dev:escrow\" \"npm:dev:dispute\" \"npm:dev:reputation\" \"npm:dev:scheduler\" \"npm:dev:notification\" \"npm:dev:ussd\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1019.0",
+    "@aws-sdk/s3-request-presigner": "^3.1019.0",
     "@fastify/cors": "^11.1.0",
     "@fastify/jwt": "^9.1.0",
     "@prisma/client": "^6.5.0",

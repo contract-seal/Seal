@@ -21,7 +21,8 @@ const mapTypeToEvent: Record<string, string> = {
   'deposit.expiry': events.TIMER_DEPOSIT_EXPIRED,
   'delivery.auto_approve': events.TIMER_APPROVAL_EXPIRED,
   'dispute.admin_sla': events.TIMER_DISPUTE_SLA_EXPIRED,
-  'stk.retry': events.PAYMENT_STK_FAILED
+  'stk.retry': events.TIMER_STK_RETRY_FIRED,
+  'iprs.retry': events.TIMER_IPRS_RETRY_FIRED
 };
 
 new Worker(

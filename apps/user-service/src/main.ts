@@ -1,11 +1,51 @@
-import { buildService, authGuard, roleGuard } from '@seal/shared';
-import { env } from '@seal/config';
+import { buildService, authGuard, roleGuard, requestJson } from '@seal/shared';
+import { env, serviceUrls } from '@seal/config';
 import { prisma } from '@seal/db';
 import { EventBus } from '@seal/events';
 import { events } from '@seal/contracts';
 
 const app = await buildService('user-service');
 const bus = new EventBus();
+
+async function scheduleIprsRetry(phone: string, attempt: number) {
+  await requestJson<{ jobId: string }>(`${serviceUrls.scheduler}/api/scheduler/timers`, {
+    method: 'POST',
+    body: JSON.stringify({
+      type: 'iprs.retry',
+      delayMs: 30 * 60 * 1000,
+      payload: { phone, attempt }
+    })
+  });
+}
+
+async function verifyIprs(name: string, nationalId: string): Promise<{ matched: boolean; unavailable: boolean }> {
+  if (!env.IPRS_API_URL) {
+    return { matched: false, unavailable: true };
+  }
+
+  try {
+    const res = await fetch(env.IPRS_API_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(env.IPRS_API_KEY ? { authorization: `Bearer ${env.IPRS_API_KEY}` } : {})
+      },
+      body: JSON.stringify({ name, nationalId })
+    });
+
+    if (res.status >= 500) {
+      return { matched: false, unavailable: true };
+    }
+    if (!res.ok) {
+      return { matched: false, unavailable: false };
+    }
+
+    const body = (await res.json()) as { matched?: boolean };
+    return { matched: Boolean(body.matched), unavailable: false };
+  } catch {
+    return { matched: false, unavailable: true };
+  }
+}
 
 app.post('/api/users/artisan/apply', async (req, reply) => {
   const body = req.body as {
@@ -16,8 +56,8 @@ app.post('/api/users/artisan/apply', async (req, reply) => {
     county: string;
   };
 
-  const iprsMatch = body.nationalId.length >= 6;
-  const status = iprsMatch ? 'pending' : 'pending_iprs_check';
+  const iprs = await verifyIprs(body.name, body.nationalId);
+  const status = iprs.matched ? 'pending' : 'pending_iprs_check';
 
   const user = await prisma.user.upsert({
     where: { phone: body.phone },
@@ -27,7 +67,7 @@ app.post('/api/users/artisan/apply', async (req, reply) => {
       trade: body.trade,
       county: body.county,
       role: 'artisan',
-      iprsVerified: iprsMatch,
+      iprsVerified: iprs.matched,
       status
     },
     create: {
@@ -37,10 +77,14 @@ app.post('/api/users/artisan/apply', async (req, reply) => {
       trade: body.trade,
       county: body.county,
       role: 'artisan',
-      iprsVerified: iprsMatch,
+      iprsVerified: iprs.matched,
       status
     }
   });
+
+  if (iprs.unavailable) {
+    await scheduleIprsRetry(user.phone, 1);
+  }
 
   return reply.send({ user });
 });
@@ -110,5 +154,36 @@ app.get('/api/users/clients/:phone', async (req, reply) => {
   }
   return reply.send({ user });
 });
+
+bus.consume('user-service', {
+  [events.TIMER_IPRS_RETRY_FIRED]: async (payload) => {
+    const phone = String(payload.phone ?? '');
+    const attempt = Number(payload.attempt ?? 1);
+    if (!phone) {
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { phone } });
+    if (!user || user.status !== 'pending_iprs_check' || !user.nationalId) {
+      return;
+    }
+
+    const iprs = await verifyIprs(user.name, user.nationalId);
+    if (iprs.matched) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          iprsVerified: true,
+          status: 'pending'
+        }
+      });
+      return;
+    }
+
+    if (iprs.unavailable && attempt < 48) {
+      await scheduleIprsRetry(phone, attempt + 1);
+    }
+  }
+}).catch((error) => app.log.error(error));
 
 await app.listen({ port: env.USER_SERVICE_PORT, host: '0.0.0.0' });
