@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  artisan
+  client
+  admin
+}
+
+enum UserStatus {
+  pending
+  active
+  suspended
+  pending_iprs_check
+}
+
+enum Tier {
+  new
+  standard
+  trusted
+  elite
+}
+
+enum JobState {
+  DRAFT
+  AWAITING_DEPOSIT
+  ACTIVE
+  PENDING_APPROVAL
+  DISPUTED
+  RELEASING
+  COMPLETE
+  CANCELLED
+}
+
+enum LedgerType {
+  credit
+  debit
+}
+
+enum MilestoneStatus {
+  pending
+  complete
+  released
+}
+
+enum PaymentType {
+  c2b
+  stk_push
+  b2c
+}
+
+enum PaymentDirection {
+  inbound
+  outbound
+}
+
+enum DisputeResolution {
+  artisan_full
+  client_full
+  split
+}
+
+model User {
+  id            String      @id @default(uuid()) @db.Uuid
+  phone         String      @unique
+  name          String
+  role          Role
+  nationalId    String?
+  iprsVerified  Boolean     @default(false)
+  status        UserStatus  @default(pending)
+  trade         String?
+  county        String?
+  tier          Tier        @default(new)
+  createdAt     DateTime    @default(now())
+  artisanJobs   Job[]       @relation("job_artisan")
+  clientJobs    Job[]       @relation("job_client")
+  raisedDisputes Dispute[]  @relation("dispute_raised_by")
+  resolvedDisputes Dispute[] @relation("dispute_resolved_by")
+}
+
+model Job {
+  id                 String       @id @default(uuid()) @db.Uuid
+  refCode            String       @unique
+  artisanId          String       @db.Uuid
+  clientId           String       @db.Uuid
+  title              String
+  description        String?
+  totalAmount        Int
+  platformFeePct     Decimal      @default(2.5) @db.Decimal(5, 2)
+  state              JobState     @default(DRAFT)
+  deadline           DateTime?
+  deliveredAt        DateTime?
+  completedAt        DateTime?
+  depositExpiryJobId String?
+  approvalTimerJobId String?
+  disputeSlaJobId    String?
+  deliveryNotes      String?
+  deliveryPhotoUrls  String[]
+  createdAt          DateTime     @default(now())
+  artisan            User         @relation("job_artisan", fields: [artisanId], references: [id])
+  client             User         @relation("job_client", fields: [clientId], references: [id])
+  milestones         Milestone[]
+  payments           Payment[]
+  ledgerEntries      EscrowLedger[]
+  dispute            Dispute?
+
+  @@index([artisanId])
+  @@index([clientId])
+  @@index([state])
+}
+
+model EscrowLedger {
+  id          String     @id @default(uuid()) @db.Uuid
+  jobId       String     @db.Uuid
+  type        LedgerType
+  amount      Int
+  mpesaRef    String?    @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  job         Job        @relation(fields: [jobId], references: [id])
+}
+
+model Milestone {
+  id          String          @id @default(uuid()) @db.Uuid
+  jobId       String          @db.Uuid
+  title       String
+  amount      Int
+  status      MilestoneStatus @default(pending)
+  completedAt DateTime?
+  releasedAt  DateTime?
+  job         Job             @relation(fields: [jobId], references: [id])
+}
+
+model Payment {
+  id         String           @id @default(uuid()) @db.Uuid
+  jobId      String?          @db.Uuid
+  type       PaymentType
+  direction  PaymentDirection
+  mpesaRef   String           @unique
+  phone      String
+  amount     Int
+  status     String           @default("confirmed")
+  rawPayload Json?
+  createdAt  DateTime         @default(now())
+  job        Job?             @relation(fields: [jobId], references: [id])
+}
+
+model Dispute {
+  id              String            @id @default(uuid()) @db.Uuid
+  jobId            String            @unique @db.Uuid
+  raisedBy         String?           @db.Uuid
+  reason           String
+  description      String?
+  clientEvidence   String[]
+  artisanEvidence  String[]
+  resolution       DisputeResolution?
+  splitArtisanPct  Decimal?          @db.Decimal(5, 2)
+  resolutionNote   String?
+  resolvedBy       String?           @db.Uuid
+  slaJobId         String?
+  createdAt        DateTime          @default(now())
+  resolvedAt       DateTime?
+  job              Job               @relation(fields: [jobId], references: [id])
+  raisedByUser     User?             @relation("dispute_raised_by", fields: [raisedBy], references: [id])
+  resolvedByUser   User?             @relation("dispute_resolved_by", fields: [resolvedBy], references: [id])
+}
+
+model ReputationScore {
+  id            String   @id @default(uuid()) @db.Uuid
+  artisanId     String   @db.Uuid
+  score         Int
+  jobsCompleted Int      @default(0)
+  onTimeRate    Decimal? @db.Decimal(5, 2)
+  disputeRate   Decimal? @db.Decimal(5, 2)
+  avgRating     Decimal? @db.Decimal(5, 2)
+  computedAt    DateTime @default(now())
+
+  @@index([artisanId, computedAt(sort: Desc)])
+}
+
+model Rating {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId      String   @unique @db.Uuid
+  artisanId  String   @db.Uuid
+  clientId   String   @db.Uuid
+  stars      Int
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  channel     String
+  recipient   String
+  template    String
+  payload     Json
+  status      String   @default("queued")
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OtpCode {
+  id        String   @id @default(uuid()) @db.Uuid
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

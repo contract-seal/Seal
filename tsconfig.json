@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@seal/config": ["packages/config/src/index.ts"],
+      "@seal/contracts": ["packages/contracts/src/index.ts"],
+      "@seal/db": ["packages/db/src/index.ts"],
+      "@seal/events": ["packages/events/src/index.ts"],
+      "@seal/auth": ["packages/auth/src/index.ts"],
+      "@seal/shared": ["packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["apps", "packages", "prisma"]
+}

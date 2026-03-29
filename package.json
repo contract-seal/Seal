@@ -1,0 +1,42 @@
+{
+  "name": "seal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "dev:gateway": "tsx watch apps/gateway/src/main.ts",
+    "dev:user": "tsx watch apps/user-service/src/main.ts",
+    "dev:job": "tsx watch apps/job-service/src/main.ts",
+    "dev:payment": "tsx watch apps/payment-service/src/main.ts",
+    "dev:escrow": "tsx watch apps/escrow-service/src/main.ts",
+    "dev:dispute": "tsx watch apps/dispute-service/src/main.ts",
+    "dev:reputation": "tsx watch apps/reputation-service/src/main.ts",
+    "dev:scheduler": "tsx watch apps/scheduler-service/src/main.ts",
+    "dev:notification": "tsx watch apps/notification-service/src/main.ts",
+    "dev:ussd": "tsx watch apps/ussd-service/src/main.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "start:all": "concurrently -n gateway,user,job,payment,escrow,dispute,reputation,scheduler,notification,ussd -c blue,green,yellow,magenta,cyan,red,white,gray,orange,purple \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:job\" \"npm:dev:payment\" \"npm:dev:escrow\" \"npm:dev:dispute\" \"npm:dev:reputation\" \"npm:dev:scheduler\" \"npm:dev:notification\" \"npm:dev:ussd\""
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/jwt": "^9.1.0",
+    "@prisma/client": "^6.5.0",
+    "bullmq": "^5.52.2",
+    "fastify": "^5.2.2",
+    "ioredis": "^5.6.1",
+    "jose": "^5.9.6",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.13",
+    "concurrently": "^9.1.2",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
