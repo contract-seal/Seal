@@ -8,8 +8,12 @@ RUN npm install
 
 COPY . .
 
-# Build backend and frontend
-RUN npm run build && cd apps/web && npm install && npm run build
+
+# Build all internal packages and apps
+RUN npm run build:all && cd apps/web && npm install && npm run build
+
+# Install only production dependencies (ensures workspace links are present)
+RUN npm install --production
 
 WORKDIR /app
 
