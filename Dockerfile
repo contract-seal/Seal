@@ -3,19 +3,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
-
+# Copy the entire monorepo (including packages, apps, etc.)
 COPY . .
 
-
-# Build all internal packages and apps
-RUN npm run build:all && cd apps/web && npm install && npm run build
-
-# Install only production dependencies (ensures workspace links are present)
+# Install dependencies and build everything inside the container
+RUN npm install
+RUN npm run build:all
+RUN cd apps/web && npm install && npm run build
 RUN npm install --production
-
-WORKDIR /app
 
 # Expose the port your gateway uses
 EXPOSE 8080
