@@ -1,0 +1,32 @@
+
+name: Deploy to Render
+
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      serviceID:
+        type: string
+        description: 'Render Service ID to deploy (e.g. srv-xxx)'
+
+jobs:
+  deploy-service:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Render CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh | sh
+      - name: Create Deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          CI: true
+        run: |
+          SERVICE_ID=${{ github.event.inputs.serviceID || secrets.RENDER_SERVICE_ID }}
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Render Service ID not provided. Set it as workflow input or secret."
+            exit 1
+          fi
+          render deploys create "$SERVICE_ID" --output json --confirm

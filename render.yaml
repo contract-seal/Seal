@@ -1,0 +1,22 @@
+# Render Deployment Configuration
+
+# 1. Web Service (Frontend + Backend via Gateway)
+# This assumes the gateway serves the frontend build as static files.
+
+services:
+  - type: web
+    name: seal-gateway
+    env: node
+    plan: free
+    buildCommand: |
+      npm install
+      npm run build
+      cd apps/web && npm install && npm run build
+    startCommand: node dist/apps/gateway/src/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add other environment variables as needed, or use Render's dashboard
+    autoDeploy: true
+    # Optionally, set a health check path
+    # healthCheckPath: /

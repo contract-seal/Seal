@@ -26,6 +26,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1019.0",
     "@fastify/cors": "^11.1.0",
     "@fastify/jwt": "^9.1.0",
+    "@fastify/static": "^9.0.0",
     "@prisma/client": "^6.5.0",
     "bullmq": "^5.52.2",
     "fastify": "^5.2.2",

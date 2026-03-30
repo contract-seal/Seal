@@ -3,11 +3,28 @@ import { randomInt } from 'crypto';
 import { env, serviceUrls } from '@seal/config';
 import { signAccessToken, verifyAccessToken } from '@seal/auth';
 import { buildService } from '@seal/shared';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 import { prisma } from '@seal/db';
 
 const redis = new Redis(env.REDIS_URL);
 
 const app = await buildService('gateway');
+
+// Serve frontend build
+app.register(fastifyStatic, {
+  root: path.join(process.cwd(), 'apps/web/build'),
+  prefix: '/',
+  wildcard: false,
+});
+
+// Fallback to index.html for SPA routes
+app.setNotFoundHandler((req, reply) => {
+  if (req.raw.method === 'GET' && !req.url.startsWith('/api/') && !req.url.startsWith('/auth/') && !req.url.startsWith('/webhook/')) {
+    return reply.sendFile('index.html');
+  }
+  reply.code(404).send({ message: 'Route not found' });
+});
 
 function extractIp(req: any) {
   const forwarded = req.headers['x-forwarded-for'];
