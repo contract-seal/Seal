@@ -19,5 +19,6 @@
       "@seal/shared": ["packages/shared/src/index.ts"]
     }
   },
-  "include": ["apps", "packages", "prisma"]
+  "include": ["apps", "packages", "prisma"],
+  "exclude": ["apps/web"]
 }
