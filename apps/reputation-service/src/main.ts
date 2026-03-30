@@ -17,13 +17,13 @@ function tierFromScore(score: number): 'new' | 'standard' | 'trusted' | 'elite' 
 async function recompute(artisanId: string) {
   const jobs = await prisma.job.findMany({ where: { artisanId, state: 'COMPLETE' } });
   const total = jobs.length;
-  const onTime = total === 0 ? 0 : jobs.filter((j) => !j.deadline || (j.completedAt && j.completedAt <= j.deadline)).length / total;
+  const onTime = total === 0 ? 0 : jobs.filter((j: any) => !j.deadline || (j.completedAt && j.completedAt <= j.deadline)).length / total;
 
   const disputes = await prisma.dispute.count({ where: { job: { artisanId } } });
   const disputeRate = total === 0 ? 0 : disputes / total;
 
   const ratings = await prisma.rating.findMany({ where: { artisanId } });
-  const avgRating = ratings.length === 0 ? 0 : ratings.reduce((acc, r) => acc + r.stars, 0) / ratings.length;
+  const avgRating = ratings.length === 0 ? 0 : ratings.reduce((acc: number, r: any) => acc + r.stars, 0) / ratings.length;
   const ratingNorm = (avgRating / 5) * 100;
 
   const historyDepth = Math.min(1, Math.log1p(total) / Math.log(51)) * 100;

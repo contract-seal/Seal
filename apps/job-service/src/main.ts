@@ -301,10 +301,10 @@ app.get('/api/artisan/dashboard', { preHandler: [authGuard, roleGuard(['artisan'
     take: 20
   });
 
-  const activeJobs = jobs.filter((j) => ['ACTIVE', 'PENDING_APPROVAL', 'RELEASING', 'DISPUTED'].includes(j.state));
-  const ids = activeJobs.map((j) => j.id);
+  const activeJobs = jobs.filter((j: any) => ['ACTIVE', 'PENDING_APPROVAL', 'RELEASING', 'DISPUTED'].includes(j.state));
+  const ids = activeJobs.map((j: any) => j.id);
   const ledger = ids.length === 0 ? [] : await prisma.escrowLedger.findMany({ where: { jobId: { in: ids } } });
-  const balanceByJob = ledger.reduce<Record<string, number>>((acc, entry) => {
+  const balanceByJob = ledger.reduce<Record<string, number>>((acc: Record<string, number>, entry: any) => {
     const current = acc[entry.jobId] ?? 0;
     acc[entry.jobId] = entry.type === 'credit' ? current + entry.amount : current - entry.amount;
     return acc;
@@ -312,11 +312,11 @@ app.get('/api/artisan/dashboard', { preHandler: [authGuard, roleGuard(['artisan'
 
   return {
     activeJobs: activeJobs.length,
-    pendingApprovals: jobs.filter((j) => j.state === 'PENDING_APPROVAL').length,
+    pendingApprovals: jobs.filter((j: any) => j.state === 'PENDING_APPROVAL').length,
     totalEarnedThisMonth: jobs
-      .filter((j) => j.state === 'COMPLETE' && j.completedAt && j.completedAt.getMonth() === new Date().getMonth())
-      .reduce((sum, j) => sum + j.totalAmount, 0),
-    jobs: activeJobs.map((j) => ({
+      .filter((j: any) => j.state === 'COMPLETE' && j.completedAt && j.completedAt.getMonth() === new Date().getMonth())
+      .reduce((sum: number, j: any) => sum + j.totalAmount, 0),
+    jobs: activeJobs.map((j: any) => ({
       ...j,
       escrowBalance: balanceByJob[j.id] ?? 0
     }))
