@@ -1,0 +1,24 @@
+/*
+  Artisan Fintech Color Palette
+  Place this file in src/styles/variables.css and import it in App.tsx or index.tsx
+*/
+:root {
+  --color-brand:        #1A6B5A;   /* Primary brand: main CTAs, active nav, progress bars */
+  --color-brand-dark:   #0F4A3D;   /* Dark variant: nav bar, headers, teal hovers */
+  --color-accent:       #D4872A;   /* Accent: highlights, icons, secondary buttons */
+  --color-accent-deep:  #B5621A;   /* Deeper accent: amber hovers, active icons, links */
+
+  --color-success:      #2A8A4A;   /* Success: payment sent, verified badge */
+  --color-warning:      #E8A820;   /* Pending: in-progress, awaiting confirmation */
+  --color-danger:       #C43C3C;   /* Error: failed payment, declined */
+  --color-info:         #4A7FA8;   /* Info: tips, banners, help prompts */
+
+  --color-bg:           #FAF8F4;   /* App background: never use pure white */
+  --color-surface:      #F0EAE0;   /* Card/panel: transaction items, dashboard cards */
+  --color-border:       #E0D8CC;   /* Borders, dividers, input outlines */
+  --color-disabled:     #C8BFB0;   /* Disabled fills, placeholder backgrounds */
+
+  --color-text-primary:   #1C1915; /* Primary text: titles, amounts, names */
+  --color-text-secondary: #54493E; /* Secondary: labels, descriptions, form text */
+  --color-text-hint:      #8C7E70; /* Tertiary: timestamps, captions, placeholders */
+}

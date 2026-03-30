@@ -18,7 +18,11 @@ declare module 'fastify' {
 
 export async function buildService(name: string): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: env.NODE_ENV === 'development' ? 'info' : 'warn' } });
-  await app.register(cors, { origin: true });
+  await app.register(cors, {
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  });
   app.get('/health', async () => ({ ok: true, service: name }));
   return app;
 }
