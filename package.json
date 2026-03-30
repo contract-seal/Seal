@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:all": "npm run build -w @seal/db && npm run build -w @seal/shared && npm run build -w @seal/config && npm run build -w @seal/auth && npm run build -w @seal/contracts && npm run build -w @seal/events && tsc -p tsconfig.json",
+    "build:all": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "dev:gateway": "tsx watch apps/gateway/src/main.ts",
     "dev:user": "tsx watch apps/user-service/src/main.ts",
@@ -20,7 +20,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "start:all": "concurrently -n gateway,user,job,payment,escrow,dispute,reputation,scheduler,notification,ussd -c blue,green,yellow,magenta,cyan,red,white,gray,orange,purple \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:job\" \"npm:dev:payment\" \"npm:dev:escrow\" \"npm:dev:dispute\" \"npm:dev:reputation\" \"npm:dev:scheduler\" \"npm:dev:notification\" \"npm:dev:ussd\""
+    "start:all": "concurrently -n gateway,user,job,payment,escrow,dispute,reputation,scheduler,notification,ussd -c blue,green,yellow,magenta,cyan,red,white,gray,orange,purple \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:job\" \"npm:dev:payment\" \"npm:dev:escrow\" \"npm:dev:dispute\" \"npm:dev:reputation\" \"npm:dev:scheduler\" \"npm:dev:notification\" \"npm:dev:ussd\"",
+    "web:start": "react-scripts start",
+    "web:build": "react-scripts build",
+    "web:test": "react-scripts test",
+    "web:eject": "react-scripts eject"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
@@ -34,14 +38,28 @@
     "ioredis": "^5.6.1",
     "jose": "^5.9.6",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.126",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^6.30.3",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.13",
     "concurrently": "^9.1.2",
     "prisma": "^6.5.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^4.9.5"
   },
   "workspaces": [
     "apps/*",

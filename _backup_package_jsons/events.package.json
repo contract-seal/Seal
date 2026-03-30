@@ -1,11 +1,9 @@
 {
-  "name": "@seal/config",
+  "name": "@seal/events",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
-  "scripts": {
-    "build": "tsc -p ."
-  },
+  "scripts": {"build": "tsc -p ."},
   "private": true
 }
