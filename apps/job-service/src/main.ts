@@ -304,7 +304,7 @@ app.get('/api/artisan/dashboard', { preHandler: [authGuard, roleGuard(['artisan'
   const activeJobs = jobs.filter((j: any) => ['ACTIVE', 'PENDING_APPROVAL', 'RELEASING', 'DISPUTED'].includes(j.state));
   const ids = activeJobs.map((j: any) => j.id);
   const ledger = ids.length === 0 ? [] : await prisma.escrowLedger.findMany({ where: { jobId: { in: ids } } });
-  const balanceByJob = ledger.reduce<Record<string, number>>((acc: Record<string, number>, entry: any) => {
+  const balanceByJob: Record<string, number> = (ledger as Array<any>).reduce((acc: Record<string, number>, entry: any) => {
     const current = acc[entry.jobId] ?? 0;
     acc[entry.jobId] = entry.type === 'credit' ? current + entry.amount : current - entry.amount;
     return acc;
