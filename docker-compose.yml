@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   postgres:
     image: postgres:16
@@ -9,9 +10,24 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+
+  seal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8080:8080"
+    command: ["docker/start-all.sh"]
+
 volumes:
   pgdata:
