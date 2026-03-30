@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:all": "npm run build -w @seal/db && npm run build -w @seal/shared && npm run build -w @seal/config && npm run build -w @seal/auth && npm run build -w @seal/contracts && npm run build -w @seal/events && tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "dev:gateway": "tsx watch apps/gateway/src/main.ts",
     "dev:user": "tsx watch apps/user-service/src/main.ts",
